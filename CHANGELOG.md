@@ -2,6 +2,12 @@
 
 All notable changes to `rdw-opendata-php` will be documented in this file.
 
+## v0.5.0 - 2026-06-25
+
+### Added
+
+- `NiekNijland\RDW\Testing\FakeRdw` — a test double for `Rdw`, backed by an in-memory `FakeSocrataClient`, that runs the real query builder and hydrator against seeded rows with no HTTP. Seed rows per dataset (`withRegisteredVehicles()`, `withRegisteredVehicleFuels()`, `withRows()`), simulate transient failures (`failWith()` / `clearFailure()`), and assert on `recordedRequests()`.
+
 ## v0.4.0 - 2026-05-30
 
 Drop 6 fuel columns (dataset 8ys7-d773) that RDW removed from the live dataset — querying them returned HTTP 400 `no-such-column`, so the generated enum cases were dead.

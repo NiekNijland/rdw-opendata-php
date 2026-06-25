@@ -496,6 +496,38 @@ The default suite is fully offline and uses mocked HTTP. To run live tests
 against `opendata.rdw.nl`, add your own tests behind an environment guard;
 the package does not ship live tests in the default suite.
 
+### Faking RDW in your own tests
+
+`NiekNijland\RDW\Testing\FakeRdw` is a drop-in `Rdw` for application tests. It
+runs the real query builder and hydrator against seeded rows, so no HTTP is
+made. Seed raw Socrata rows (RDW field keys) per dataset; query parameters are
+recorded for assertions but do not filter the returned rows.
+
+```php
+use NiekNijland\RDW\Datasets\DatasetId;
+use NiekNijland\RDW\Testing\FakeRdw;
+
+$rdw = (new FakeRdw())
+    ->withRegisteredVehicles([
+        ['kenteken' => 'AB123C', 'merk' => 'HONDA', 'handelsbenaming' => 'CBR600RR', 'cilinderinhoud' => '599'],
+    ])
+    ->withRegisteredVehicleFuels([
+        ['kenteken' => 'AB123C', 'nettomaximumvermogen' => '88'],
+    ]);
+
+$record = $rdw->registeredVehicles()->where(RegisteredVehicleField::Brand, 'HONDA')->first();
+// $record->licensePlate === 'AB123C', $record->engineDisplacement === 599
+
+// Simulate a transient failure, then recover:
+$rdw->failWith(DatasetId::RegisteredVehicles);          // throws RdwException on next query
+$rdw->clearFailure(DatasetId::RegisteredVehicles);
+
+// Assert on what was requested:
+$rdw->recordedRequests(); // [['dataset' => 'm9d7-ebf2', 'query' => [...]], ...]
+```
+
+In a service container, bind it for the test: `$this->app->instance(Rdw::class, $rdw)`.
+
 ## Architecture
 
 ```
